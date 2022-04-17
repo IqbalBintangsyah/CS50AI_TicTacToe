@@ -5,6 +5,7 @@ Tic Tac Toe Player
 import copy
 from ctypes import util
 from hashlib import new
+from re import L
 
 from numpy import empty
 
@@ -34,7 +35,7 @@ def player(board):
                 countX = countX + 1
             if board[x][y] == O:
                 countO = countO + 1
-    if countX + countO == 9:
+    if countX + countO == 9 or winner(board) is not None:
         return 1
     if board == initial_state() or countX == countO:
         return X
@@ -119,70 +120,52 @@ def utility(board):
         return 0
 
 
-def max(board, score = -9999):
-    action = actions(board)
-        
-    for a in action:
-        copy_board = copy.deepcopy(board)
-        copy_board[a[0]][a[1]] = X
-        print("X moves", a)
-        if not terminal(copy_board):
-            score = utility(copy_board)
-            move = min(copy_board, score)
-        else:
-            if score <= utility(copy_board):
-                score = utility(copy_board)
-                move = a
-    return move
-
-def min(board, score = 9999):
-    action = actions(board)
-    
-    for a in action:        
-        copy_board = copy.deepcopy(board)
-        copy_board[a[0]][a[1]] = O
-        print("O moves", a)
-        if not terminal(copy_board):
-            score = utility(copy_board)
-            move = max(copy_board, score)
-        else:
-            if score >= utility(copy_board):
-                score = utility(copy_board)
-                move = a
-    return move
-
-
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    opp = player(board)
-    if opp == O:
-        move = min(board)
+    if terminal(board):
+        return None
     else:
-        move = max(board)
-    return move
-    '''
-    opp = player(board)
-    if opp == O:
-        score = 9999
-    else:
-        score = -9999
-    action = actions(board)
-    new_board = copy.deepcopy(board)
-    play = opp
-    while(not terminal(board)):
-        move = action.pop()
-        new_board[move[0]][move[1]] = play
-        if opp == O:
-            if utility(new_board)<score:
-                score = utility(new_board)
+        if player(board) == X:
+            value, move = max_value(board)
+            return move
         else:
-            if utility(new_board)>score:
-                score = utility(new_board)
-        score = utility(new_board)
-        play = player(new_board)
-        for act in actions(new_board):
-            action.append(act)
-    '''
-    return move
+            value, move = min_value(board)
+            return move
+
+
+def max_value(board):
+    if terminal(board):
+        return utility(board), None
+
+    v = float('-inf')
+    move = None
+    for action in actions(board):
+        # v = max(v, min_value(result(board, action)))
+        aux, act = min_value(result(board, action))
+        if aux > v:
+            v = aux
+            move = action
+            if v == 1:
+                return v, move
+
+    return v, move
+
+
+def min_value(board):
+    if terminal(board):
+        return utility(board), None
+
+    v = float('inf')
+    move = None
+    for action in actions(board):
+        # v = max(v, min_value(result(board, action)))
+        aux, act = max_value(result(board, action))
+        if aux < v:
+            v = aux
+            move = action
+            if v == -1:
+                return v, move
+
+    return v, move
